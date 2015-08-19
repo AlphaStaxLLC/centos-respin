@@ -1,5 +1,5 @@
-[epel]
-name=Extra Packages for Enterprise Linux 7 - $basearch
+[cloud]
+name=CentOS Cloud Packages - $basearch
 baseurl=http://buildlogs.centos.org/centos/7/cloud/openstack-kilo/
 mirrorlist=http://buildlogs.centos.org/centos/7/cloud/openstack-rdo/
 failovermethod=priority
