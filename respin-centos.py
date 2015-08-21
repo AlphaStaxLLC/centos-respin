@@ -193,9 +193,9 @@ def main(argv):
     p.wait()
     print ("Creating ISO....")
     #TODO: Get the geniso command to work from here
-    # subprocess.call(["./mkiso.sh"],cwd=WORK_DIRECTORY)
-    cmd = "-U -r -v -T -J -joliet-long -V \"CentOS 7 x86_64\" -volset \"CentOS 7 x86_64\" -A \"CentOS 7 x86_64\" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e images/efiboot.img -no-emul-boot -o ../Cent.iso ."
-    subprocess.call("genisoimage " + cmd,cwd=dvd_dir)
+    subprocess.call(["./mkiso.sh"],cwd=WORK_DIRECTORY)
+    # cmd = "-U -r -v -T -J -joliet-long -V \"CentOS 7 x86_64\" -volset \"CentOS 7 x86_64\" -A \"CentOS 7 x86_64\" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e images/efiboot.img -no-emul-boot -o ../Cent.iso ."
+    # subprocess.call("genisoimage " + cmd,cwd=dvd_dir)
     # p = subprocess.Popen(
     #     ["genisoimage", "-U", "-r", "-v", "-T", "-J", "-joliet-long", "-V", "\"CentOS\ 7\ x86_64\"", "-volset",
     #      "\"CentOS\ 7\ x86_64\"", "-A", "\"CentOS\ 7\ x86_64\"", "-b", "isolinux/isolinux.bin", "-c", "isolinux/boot.cat",
