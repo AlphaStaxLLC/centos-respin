@@ -26,8 +26,10 @@ REPO_LINK = "https://raw.githubusercontent.com/asadpiz/centos-respin/master/clou
 
 def mount_iso(args, iso_mount):
     if not args.isofile:
+        print ("Downloading ISO Please Wait....\n")
         urllib.urlretrieve(str(args.isolink), "CentOS-7-x86_64-Minimal-1503-01.iso")
         args.isofile = "CentOS-7-x86_64-Minimal-1503-01.iso"
+        print ("Finished Download\n")
     if os.path.exists(iso_mount):
         if os.path.ismount(iso_mount):
             subprocess.call(["umount", "-f", iso_mount])
@@ -178,7 +180,9 @@ def main(argv):
                                stdout=subprocess.PIPE)
     for line in iter(process.stdout.readline, ''):
         sys.stdout.write(line)
-
+    if os.path.exists(dvd_dir + "/images/updates.img"):
+        os.remove(dvd_dir + "/images/updates.img")
+    urllib.urlretrieve ("https://github.com/asadpiz/org_centos_cloud/releases/download/v0.1-alpha/updates.img", dvd_dir + "/images/updates.img")
     copy_tree(package_dir, dvd_dir + "/Packages")
     if os.path.exists(dvd_dir + "/Packages/RDO"):
         shutil.rmtree(dvd_dir + "/Packages/RDO")
