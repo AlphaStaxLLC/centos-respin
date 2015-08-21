@@ -9,6 +9,7 @@ This script creates CentOS 7 ISO with [CentOS Cloud](http://buildlogs.centos.org
 This will download the CentOS minimal ISO from a mirror and then add CentOS Cloud Packages to this ISO. Optionally you can specify "-f [PATH-TO-ISO]" option to skip ISO download.
 
 ## Script Options:
+```bash
 respin-centos.py [-h] [-f ISOFILE | -d ISODIRECTORY | -l ISOLINK]
                         [-o OUTPUT] [-p PACKAGELIST]
 
@@ -40,6 +41,6 @@ optional arguments:
                         ist.md
 
 
-
+```
 IRC: asad_ (#centos-devel)
 
