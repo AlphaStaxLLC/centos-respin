@@ -24,7 +24,6 @@ OUTPUT_FILENAME = "CentOS-7-x86_64-Minimal-1503-01-RDO.iso"
 PACKAGES = ['yum-utils', 'genisoimage', 'createrepo']
 PACKAGE_LIST = "https://github.com/asadpiz/org_centos_cloud/blob/master/PackageList.md"
 WORK_DIRECTORY = "/tmp/centos-respin"
-REPO_LINK = "https://raw.githubusercontent.com/asadpiz/centos-respin/master/cloud.repo"
 
 def mount_iso(args, iso_mount):
     """
