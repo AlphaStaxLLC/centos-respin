@@ -130,20 +130,8 @@ def main(argv):
     args = parser.parse_args()
 
     # Download Required Packages
-    yb = yum.YumBase()
-    installed = [x.name for x in (yb.rpmdb.returnPackages())]
-    for package in PACKAGES:
-        if package in installed:
-            pass
-        else:
-            print('Installing {0}'.format(package))
-            kwarg = {
-                'name': package
-            }
-            yb.install(**kwarg)
-            yb.resolveDeps()
-            yb.buildTransaction()
-            yb.processTransaction()
+    p = subprocess.Popen(["yum", "-y", "install"] + PACKAGES[0:])
+    p.wait()
     # Create Directories
     iso_mount = "/mnt/respin-iso"
     dvd_dir = WORK_DIRECTORY + "/DVD"
