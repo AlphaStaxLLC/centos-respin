@@ -252,7 +252,6 @@ def main(argv):
     os.remove(WORK_DIRECTORY+"/mkiso.sh")
     os.remove("/etc/yum.repos.d/cloud.repo")
     os.remove("RDO.zip")
-    os.remove("CentOS-7-x86_64-Minimal-1503-01.iso")
 
 if __name__ == "__main__":
     main(sys.argv)
