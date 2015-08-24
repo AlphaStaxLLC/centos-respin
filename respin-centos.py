@@ -7,7 +7,7 @@ Python Script to create a respin CentOS ISO with Custom Packages
 import sys
 import argparse
 import yum
-import urllib, urllib2
+import urllib, urllib2, urlparse
 import re
 import subprocess
 import os
@@ -16,6 +16,8 @@ import shutil
 import fileinput
 import glob
 import xml.etree.ElementTree as ET
+import zipfile
+import stat
 
 
 OUTPUT_FILENAME = "CentOS-7-x86_64-Minimal-1503-01-RDO.iso"
@@ -25,10 +27,21 @@ WORK_DIRECTORY = "/tmp/centos-respin"
 REPO_LINK = "https://raw.githubusercontent.com/asadpiz/centos-respin/master/cloud.repo"
 
 def mount_iso(args, iso_mount):
+    """
+    This function handles the ISO Mounting, if an ISO file is given it just simply
+    mounts the ISO. Otherwise it tries to download the ISO over http and then mounts
+    it.
+
+    :param args:
+    :param iso_mount:
+    :return:
+    """
     if not args.isofile:
         print ("Downloading ISO Please Wait....\n")
-        urllib.urlretrieve(str(args.isolink), "CentOS-7-x86_64-Minimal-1503-01.iso")
-        args.isofile = "CentOS-7-x86_64-Minimal-1503-01.iso"
+        split = urlparse.urlsplit(str(args.isolink))
+        filename = split.path.split("/")[-1]
+        urllib.urlretrieve(str(args.isolink), filename)
+        args.isofile = filename
         print ("Finished Download\n")
     if os.path.exists(iso_mount):
         if os.path.ismount(iso_mount):
@@ -38,88 +51,84 @@ def mount_iso(args, iso_mount):
     subprocess.call(["mount", "-t", "iso9660", "-o", "loop", args.isofile, iso_mount])
 
 def indent(elem, level=0):
-  i = "\n" + level*"  "
-  if len(elem):
-    if not elem.text or not elem.text.strip():
-      elem.text = i + "  "
-    if not elem.tail or not elem.tail.strip():
-      elem.tail = i
-    for elem in elem:
-      indent(elem, level+1)
-    if not elem.tail or not elem.tail.strip():
-      elem.tail = i
-  else:
-    if level and (not elem.tail or not elem.tail.strip()):
-      elem.tail = i
+    """
+    This is just to make the comps file pretty, should be replaced by something
+    else in future.
+
+    :param elem:
+    :param level:
+    :return:
+    """
+
+    i = "\n" + level*"  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+          elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+          elem.tail = i
+        for elem in elem:
+          indent(elem, level+1)
+        if not elem.tail or not elem.tail.strip():
+          elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+          elem.tail = i
 
 def edit_comps(file,plist):
+    """
+    Adds a new Software Group to Comps File
+
+    :param file:
+    :param plist:
+    :return:
+    """
     tree = ET.parse(str(file))
 
     root = tree.getroot()
     group = ET.SubElement(root, 'group')
     id = ET.SubElement(group, 'id')
-    id.text = "Cloud"
     name = ET.SubElement(group, 'name')
-    name.text = "CentOS Cloud"
     description = ET.SubElement(group, 'description')
-    description.text = "Packages from CentOS cloud Repo"
     default=ET.SubElement(group, 'default')
     uservisible=ET.SubElement(group, 'uservisible')
     packagelist=ET.SubElement(group, 'packagelist')
+
+    id.text = "Cloud"
+    name.text = "CentOS Cloud"
+    description.text = "Packages from CentOS cloud Repo"
     default.text = "true"
     uservisible.text = "true"
-    for elem in plist[1:]: # TODO EDIT For custom packages
+
+    for elem in plist:
         packagereq = ET.SubElement(packagelist, 'packagereq')
         packagereq.text = elem
         packagereq.set("type","mandatory")
 
     indent(group)
     tree.write(WORK_DIRECTORY + "/DVD/comps.xml")
-    # TODO: Add new packages to a category that appears during install
 
 def main(argv):
+    """
+    Main Function:
+    Download Required Packages.
+    Creates Directories: /mnt/respin-iso, <WORK_DIRECTORY>/DVD, <WORK_DIRECTORY>/Packages
+
+
+    :param argv:
+    :return:
+    """
     parser = argparse.ArgumentParser(
         description="Creates a Respin of CentOS. By Default fetches CentOS 7 minimal ISO from the network and adds openstack packages from CentOS Cloud Repo to ISO")
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("-f", "--isofile", help="CentOS ISO File", default=None)
-    group.add_argument("-d", "--isodirectory", help="CentOS DVD Directory", default=None)
+    group.add_argument("-f", "--isofile", help="ISO File", default=None)
+    group.add_argument("-d", "--isodirectory", help="DVD Directory", default=None)
     group.add_argument("-l", "--isolink",
-                       help="CentOS ISO Link [DEFAULT] = http://mirror.eu.oneandone.net/linux/distributions/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1503-01.iso",
+                       help="ISO http Link [DEFAULT] = http://mirror.eu.oneandone.net/linux/distributions/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1503-01.iso",
                        default="http://mirror.eu.oneandone.net/linux/distributions/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1503-01.iso", )
-    parser.add_argument("-o", "--output", help="Output filename [DEFAULT] = CentOS-7-x86_64-Minimal-1503-01-RDO.iso",
-                        default="CentOS-7-x86_64-Minimal-1503-01-RDO.iso")
     parser.add_argument("-p", "--packagelist",
-                        help="Package List to be Added to ISO [DEFAULT] = https://github.com/asadpiz/org_centos_cloud/blob/master/PackageList.md",
+                        help="Package List (only arch x86_64) to be Added to ISO, Make sure the packages you want to download have a corresponding repo in /etc/yum.repos.d/ [DEFAULT] = https://github.com/asadpiz/org_centos_cloud/blob/master/PackageList.md",
                         default=PACKAGE_LIST)
-    # group.add_argument("-c", "--cleanup",action="store_true", help="Cleanup Working Directory", default=False)
     args = parser.parse_args()
-
-    iso_mount = "/mnt/cent-respin"
-    dvd_dir = WORK_DIRECTORY + "/DVD"
-    package_dir = WORK_DIRECTORY + "/Packages"
-
-    # Handling ISO
-    if os.path.exists(dvd_dir):
-        # raw_input("Existing DVD Directory Found! Do you want to Keep this directory or ")
-        shutil.rmtree(dvd_dir)
-        os.makedirs(dvd_dir)
-    else:
-        os.makedirs(dvd_dir)
-
-    if (args.isofile):
-        mount_iso(args, iso_mount)
-    elif args.isodirectory:
-        iso_mount = str(args.isodirectory)
-    else:  # DEFAULT or LINK PROVIDED
-        mount_iso(args, iso_mount)
-
-    if os.path.exists(iso_mount):
-        copy_tree(iso_mount, dvd_dir)
-    else:
-        raise Exception("No DVD Directory Found!")
-
-    # Create Cloud Repo
-    shutil.copy("cloud.repo", "/etc/yum.repos.d/cloud.repo")
 
     # Download Required Packages
     yb = yum.YumBase()
@@ -136,9 +145,59 @@ def main(argv):
             yb.resolveDeps()
             yb.buildTransaction()
             yb.processTransaction()
+    # Create Directories
+    iso_mount = "/mnt/respin-iso"
+    dvd_dir = WORK_DIRECTORY + "/DVD"
+    package_dir = WORK_DIRECTORY + "/Packages"
+    if os.path.exists("CentOS-7-x86_64-Minimal-1503-01.iso"):
+        print ("Found ISO in Current Directory\n")
+        args.isofile = "CentOS-7-x86_64-Minimal-1503-01.iso"
+    if os.path.exists(dvd_dir):
+        # Existing DVD Directory Found! Remove & Create New
+        shutil.rmtree(dvd_dir)
+        os.makedirs(dvd_dir)
+    else:
+        os.makedirs(dvd_dir)
 
+    if (args.isofile):
+        mount_iso(args, iso_mount)
+    elif args.isodirectory:
+        iso_mount = str(args.isodirectory)
+    else:  # DEFAULT or LINK PROVIDED
+        mount_iso(args, iso_mount)
+    if os.path.exists(iso_mount):
+        copy_tree(iso_mount, dvd_dir)
+    else:
+        raise Exception("No DVD Directory Found!")
+
+    # Download Cloud Addon
+    if os.path.exists(dvd_dir + "/images/updates.img"):
+        os.remove(dvd_dir + "/images/updates.img")
+    urllib.urlretrieve ("https://github.com/asadpiz/org_centos_cloud/releases/download/v0.1-alpha/updates.img", dvd_dir + "/images/updates.img")
+    # Fetch Contents of RDO file
+    if os.path.exists("RDO.zip"):
+        pass
+    else:
+        urllib.urlretrieve ("https://github.com/asadpiz/centos-respin/blob/master/RDO.zip?raw=true", "RDO.zip")
+    if os.path.exists(dvd_dir + "/Packages/RDO"):
+        shutil.rmtree(dvd_dir + "/Packages/RDO")
+    os.makedirs(dvd_dir + "/Packages/RDO")
+    z = zipfile.ZipFile("RDO.zip")
+    z.extract(r"mkiso.sh", WORK_DIRECTORY + "/")
+    for name in z.namelist():
+        if str (name) == "mkiso.sh":
+            pass
+        else:
+            z.extract(name, dvd_dir + "/Packages/RDO")
+    # Create Cloud Repo with baseurl=http://buildlogs.centos.org/centos/7/cloud/openstack-kilo/
+    if os.path.exists("/etc/yum.repos.d/cloud.repo"):
+        os.remove("/etc/yum.repos.d/cloud.repo")
+    repo_file = open("/etc/yum.repos.d/cloud.repo", "w")
+    repo_file.write(
+        "[cloud]\nname=CentOS Cloud Packages - $basearch\nbaseurl=http://buildlogs.centos.org/centos/7/cloud/openstack-kilo/\nfailovermethod=priority\nenabled=1\ngpgcheck=0")
+    repo_file.close()
     # Fetch PackageList
-    plist = ["", ]
+    plist = []
     if str(args.packagelist).startswith("http"):
         for line in urllib2.urlopen(args.packagelist):
             if args.packagelist == PACKAGE_LIST:
@@ -155,13 +214,7 @@ def main(argv):
         os.remove(WORK_DIRECTORY + "/comps.xml")
     for file in glob.glob(dvd_dir + "/repodata/*-comps.xml"):
         edit_comps(file,plist)
-    #   shutil.copy(file, WORK_DIRECTORY + "/comps.xml")
     shutil.rmtree(dvd_dir + "/repodata")
-    for line in fileinput.input(dvd_dir + "/TRANS.TBL", inplace=True):
-        print ""
-
-    if not args.isodirectory:
-        subprocess.call(["umount", "-f", iso_mount])
 
     # TODO: check if packages already present in directory prompt
     if os.path.exists(package_dir):
@@ -170,52 +223,37 @@ def main(argv):
     else:
         os.makedirs(package_dir)
 
-    # TODO: ERROR HANDLING & USE DNF
+    # TODO: Download Packages via yum API | DNF
     print ("Downloading %d Packages For ISO, Please Wait...\n" % (len(plist)))
-    process = subprocess.Popen(
-        ["yum", "install", "--installroot=", WORK_DIRECTORY, "-x *.i686", "--downloadonly", "--downloaddir=" + str(package_dir)] + plist[1:],
-        stdout=subprocess.PIPE)
-    process = subprocess.Popen(["yumdownloader", "--installroot=", WORK_DIRECTORY, "-x *.i686", "--resolve",
-                                "--destdir=" + str(package_dir)] + plist[1:],
-                               stdout=subprocess.PIPE)
-    for line in iter(process.stdout.readline, ''):
-        sys.stdout.write(line)
-    if os.path.exists(dvd_dir + "/images/updates.img"):
-        os.remove(dvd_dir + "/images/updates.img")
-    urllib.urlretrieve ("https://github.com/asadpiz/org_centos_cloud/releases/download/v0.1-alpha/updates.img", dvd_dir + "/images/updates.img")
+    FNULL = open(os.devnull, 'w') # Disable output
+    p = subprocess.Popen(["yumdownloader", "--installroot=", WORK_DIRECTORY, "-x *.i686", "--resolve",
+                                "--destdir=" + str(package_dir)] + plist[0:],stdout=FNULL)
+    p.wait()
     copy_tree(package_dir, dvd_dir + "/Packages")
-    if os.path.exists(dvd_dir + "/Packages/RDO"):
-        shutil.rmtree(dvd_dir + "/Packages/RDO")
-    shutil.copytree("RDO/", dvd_dir + "/Packages/RDO")
-    shutil.copy("mkiso.sh", WORK_DIRECTORY)
-    # TODO: Fetch Latest Updates.img and place it in <DVD/>images/directory
     print ("Done Downloading Packages\n")
 
     #  createrepo -g /DVD/comps.xml .
     print ("Creating Custom Repo\n")
-    p=subprocess.Popen(["createrepo", "-g", "comps.xml", dvd_dir], cwd=dvd_dir)
+    p=subprocess.Popen(["createrepo", "-g", "comps.xml", dvd_dir], cwd=dvd_dir, stdout=FNULL)
     p.wait()
     print ("Creating ISO....")
-    #TODO: Get the geniso command to work from here
+
+    # print label
+    st = os.stat(WORK_DIRECTORY + "/mkiso.sh")
+    os.chmod(WORK_DIRECTORY + "/mkiso.sh", st.st_mode | stat.S_IEXEC)
     subprocess.call(["./mkiso.sh"],cwd=WORK_DIRECTORY)
-    # cmd = "-U -r -v -T -J -joliet-long -V \"CentOS 7 x86_64\" -volset \"CentOS 7 x86_64\" -A \"CentOS 7 x86_64\" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e images/efiboot.img -no-emul-boot -o ../Cent.iso ."
-    # subprocess.call("genisoimage " + cmd,cwd=dvd_dir)
-    # p = subprocess.Popen(
-    #     ["genisoimage", "-U", "-r", "-v", "-T", "-J", "-joliet-long", "-V", "\"CentOS\ 7\ x86_64\"", "-volset",
-    #      "\"CentOS\ 7\ x86_64\"", "-A", "\"CentOS\ 7\ x86_64\"", "-b", "isolinux/isolinux.bin", "-c", "isolinux/boot.cat",
-    #      "-no-emul-boot", "-boot-load-size", "4", "-boot-info-table", "-eltorito-alt-boot", "-e", "images/efiboot.img",
-    #      "-no-emul-boot", "-o", WORK_DIRECTORY + "/" + OUTPUT_FILENAME, "."], cwd=dvd_dir)
-    # p.wait()
-    # p = subprocess.Popen(["implantisomd5", WORK_DIRECTORY + "/" +OUTPUT_FILENAME])
-    # p.wait()
-    print ("Completed ISO FILE CAN BE FOUND AT: " + WORK_DIRECTORY + "/" +OUTPUT_FILENAME)
+    print ("\n\nISO CREATION COMPLETE!!! FILE CAN BE FOUND AT: " + WORK_DIRECTORY + "/" +OUTPUT_FILENAME)
     # Cleanup
+    if not args.isodirectory:
+        subprocess.call(["umount", "-f", iso_mount])
     if os.path.exists(dvd_dir):
-        shutil.rmtree(dvd_dir)
+         shutil.rmtree(dvd_dir)
+    if os.path.exists(package_dir):
+        shutil.rmtree(package_dir)
     os.remove(WORK_DIRECTORY+"/mkiso.sh")
-    # TODO: Download Packages via yum API
-
-
+    os.remove("/etc/yum.repos.d/cloud.repo")
+    os.remove("RDO.zip")
+    os.remove("CentOS-7-x86_64-Minimal-1503-01.iso")
 
 if __name__ == "__main__":
     main(sys.argv)
