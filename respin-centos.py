@@ -21,7 +21,7 @@ import stat
 
 
 OUTPUT_FILENAME = "CentOS-7-x86_64-Minimal-1503-01-RDO.iso"
-PACKAGES = ['yum-utils', 'genisoimage', 'createrepo']
+PACKAGES = ['yum-utils', 'genisoimage', 'createrepo', 'isomd5sum']
 PACKAGE_LIST = "https://github.com/asadpiz/org_centos_cloud/blob/master/PackageList.md"
 WORK_DIRECTORY = "/tmp/centos-respin"
 
