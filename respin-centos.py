@@ -128,9 +128,11 @@ def main(argv):
                         help="Package List (only arch x86_64) to be Added to ISO, Make sure the packages you want to download have a corresponding repo in /etc/yum.repos.d/ [DEFAULT] = https://github.com/asadpiz/org_centos_cloud/blob/master/PackageList.md",
                         default=PACKAGE_LIST)
     args = parser.parse_args()
+    FNULL = open(os.devnull, 'w') # Disable output
 
     # Download Required Packages
-    p = subprocess.Popen(["yum", "-y", "install"] + PACKAGES[0:])
+    print ("Downloading Dependencies\n")
+    p = subprocess.Popen(["yum", "-y", "install"] + PACKAGES[0:],stdout=FNULL)
     p.wait()
     # Create Directories
     iso_mount = "/mnt/respin-iso"
@@ -212,7 +214,6 @@ def main(argv):
 
     # TODO: Download Packages via yum API | DNF
     print ("Downloading %d Packages For ISO, Please Wait...\n" % (len(plist)))
-    FNULL = open(os.devnull, 'w') # Disable output
     p = subprocess.Popen(["yumdownloader", "--installroot=", WORK_DIRECTORY, "-x *.i686", "--resolve",
                                 "--destdir=" + str(package_dir)] + plist[0:],stdout=FNULL)
     p.wait()
