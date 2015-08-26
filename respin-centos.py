@@ -172,7 +172,6 @@ def main(argv):
         pass
     else:
         urllib.urlretrieve("https://github.com/asadpiz/centos-respin/blob/master/RDO.zip?raw=true", "RDO.zip")
-        time.sleep(4)  # Wait for Download to complete
     if os.path.exists(dvd_dir + "/Packages/RDO"):
         shutil.rmtree(dvd_dir + "/Packages/RDO")
     os.makedirs(dvd_dir + "/Packages/RDO")
