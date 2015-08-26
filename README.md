@@ -25,15 +25,18 @@ optional arguments:
   -d ISODIRECTORY, --isodirectory ISODIRECTORY
                         DVD Directory
   -l ISOLINK, --isolink ISOLINK
-                        ISO http Link [DEFAULT] = http://mirror.eu.oneandone.n
-                        et/linux/distributions/centos/7/isos/x86_64/CentOS-7-x
-                        86_64-Minimal-1503-01.iso
+                        ISO http Link [DEFAULT] = http://isoredirect.centos.or
+                        g/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1503-01
+                        .iso
   -p PACKAGELIST, --packagelist PACKAGELIST
                         Package List (only arch x86_64) to be Added to ISO,
                         Make sure the packages you want to download have a
                         corresponding repo in /etc/yum.repos.d/ [DEFAULT] = ht
                         tps://github.com/asadpiz/org_centos_cloud/blob/master/
                         PackageList.md
+  -o OUTPUT, --output OUTPUT
+                        Output Filename [DEFAULT] =
+                        CentOS-7-x86_64-RDO-1503.iso
 
 ```
 IRC: asad_ (#centos-devel)

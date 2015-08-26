@@ -122,11 +122,14 @@ def main(argv):
     group.add_argument("-f", "--isofile", help="ISO File", default=None)
     group.add_argument("-d", "--isodirectory", help="DVD Directory", default=None)
     group.add_argument("-l", "--isolink",
-                       help="ISO http Link [DEFAULT] = http://mirror.eu.oneandone.net/linux/distributions/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1503-01.iso",
-                       default="http://mirror.eu.oneandone.net/linux/distributions/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1503-01.iso", )
+                       help="ISO http Link [DEFAULT] = http://isoredirect.centos.org/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1503-01.iso",
+                       default="http://isoredirect.centos.org/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1503-01.iso", )
     parser.add_argument("-p", "--packagelist",
                         help="Package List (only arch x86_64) to be Added to ISO, Make sure the packages you want to download have a corresponding repo in /etc/yum.repos.d/ [DEFAULT] = https://github.com/asadpiz/org_centos_cloud/blob/master/PackageList.md",
                         default=PACKAGE_LIST)
+    parser.add_argument("-o", "--output",
+                        help="Output Filename [DEFAULT] = CentOS-7-x86_64-RDO-1503.iso",
+                        default="CentOS-7-x86_64-RDO-1503.iso")
     args = parser.parse_args()
     FNULL = open(os.devnull, 'w') # Disable output
 
@@ -138,9 +141,6 @@ def main(argv):
     iso_mount = "/mnt/respin-iso"
     dvd_dir = WORK_DIRECTORY + "/DVD"
     package_dir = WORK_DIRECTORY + "/Packages"
-    if os.path.exists("CentOS-7-x86_64-Minimal-1503-01.iso"):
-        print ("Found ISO in Current Directory\n")
-        args.isofile = "CentOS-7-x86_64-Minimal-1503-01.iso"
     if os.path.exists(dvd_dir):
         # Existing DVD Directory Found! Remove & Create New
         shutil.rmtree(dvd_dir)
@@ -214,9 +214,15 @@ def main(argv):
 
     # TODO: Download Packages via yum API | DNF
     print ("Downloading %d Packages For ISO, Please Wait...\n" % (len(plist)))
-    p = subprocess.Popen(["yumdownloader", "--installroot=", WORK_DIRECTORY, "-x *.i686", "--resolve",
-                                "--destdir=" + str(package_dir)] + plist[0:],stdout=FNULL)
+    # Updates means two versions of same package will be on ISO which causes Anaconda to Act Up
+    p = subprocess.Popen(["yum","-y", "install", "--installroot="+ WORK_DIRECTORY, "--disablerepo=updates","--downloadonly",
+                              "--downloaddir=" + str(package_dir)] + plist[0:],stdout=FNULL)
+
+
+    # p = subprocess.Popen(["yumdownloader", "--installroot=" + WORK_DIRECTORY, "-x *.i686", "--resolve",
+    #                              "--destdir=" + str(package_dir)] + plist[0:])
     p.wait()
+
     copy_tree(package_dir, dvd_dir + "/Packages")
     print ("Done Downloading Packages\n")
 
@@ -229,15 +235,25 @@ def main(argv):
     # print label
     st = os.stat(WORK_DIRECTORY + "/mkiso.sh")
     os.chmod(WORK_DIRECTORY + "/mkiso.sh", st.st_mode | stat.S_IEXEC)
-    subprocess.call(["./mkiso.sh"],cwd=WORK_DIRECTORY)
-    print ("\n\nISO CREATION COMPLETE!!! FILE CAN BE FOUND AT: " + WORK_DIRECTORY + "/" +OUTPUT_FILENAME)
-    # Cleanup
+    subprocess.call(["./mkiso.sh", args.output],cwd=WORK_DIRECTORY,stdout=FNULL)
+    if args.output == "CentOS-7-x86_64-Minimal-1503-01-RDO.iso":
+        print ("\n\nISO CREATION COMPLETE!!! FILE CAN BE FOUND AT: " + WORK_DIRECTORY + "/" +OUTPUT_FILENAME)
+    else:
+        print ("\n\nISO CREATION COMPLETE!!! FILE CAN BE FOUND AT: " + args.output + "\n DEFAULT PATH: " + WORK_DIRECTORY)
+
+    # Cleanup Removes Downloaded ISO file, mounted directory (if -d not specified), DVD directory and downloaded Packages Directory
+    file_names = os.listdir(os.curdir)
+    for downloaded_iso in file_names:
+        if os.path.isfile(downloaded_iso) and downloaded_iso.endswith(".iso"):
+            os.remove(downloaded_iso)
     if not args.isodirectory:
         subprocess.call(["umount", "-f", iso_mount])
     if os.path.exists(dvd_dir):
          shutil.rmtree(dvd_dir)
     if os.path.exists(package_dir):
         shutil.rmtree(package_dir)
+    if os.path.exists(WORK_DIRECTORY+"/var"):
+        shutil.rmtree(WORK_DIRECTORY+"/var")
     os.remove(WORK_DIRECTORY+"/mkiso.sh")
     os.remove("/etc/yum.repos.d/cloud.repo")
     os.remove("RDO.zip")
