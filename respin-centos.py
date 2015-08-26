@@ -122,8 +122,8 @@ def main(argv):
     group.add_argument("-f", "--isofile", help="ISO File", default=None)
     group.add_argument("-d", "--isodirectory", help="DVD Directory", default=None)
     group.add_argument("-l", "--isolink",
-                       help="ISO http Link [DEFAULT] = http://isoredirect.centos.org/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1503-01.iso",
-                       default="http://isoredirect.centos.org/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1503-01.iso", )
+                       help="ISO http Link [DEFAULT] = http://mirror.eu.oneandone.net/linux/distributions/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1503-01.iso",
+                       default="http://mirror.eu.oneandone.net/linux/distributions/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1503-01.iso", )
     parser.add_argument("-p", "--packagelist",
                         help="Package List (only arch x86_64) to be Added to ISO, Make sure the packages you want to download have a corresponding repo in /etc/yum.repos.d/ [DEFAULT] = https://github.com/asadpiz/org_centos_cloud/blob/master/PackageList.md",
                         default=PACKAGE_LIST)
