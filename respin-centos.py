@@ -167,7 +167,11 @@ def main(argv):
     if os.path.exists("RDO.zip"):
         pass
     else:
-        urllib.urlretrieve ("https://github.com/asadpiz/centos-respin/blob/master/RDO.zip?raw=true", "RDO.zip")
+        # urlretrieve was not blocking
+        # urllib.urlretrieve ("https://github.com/asadpiz/centos-respin/blob/master/RDO.zip?raw=true", "RDO.zip")
+        f = urllib.urlopen("https://github.com/asadpiz/centos-respin/blob/master/RDO.zip?raw=true")
+        with open("RDO.zip", "wb") as zipFile:
+            zipFile.write(f.read())
     if os.path.exists(dvd_dir + "/Packages/RDO"):
         shutil.rmtree(dvd_dir + "/Packages/RDO")
     os.makedirs(dvd_dir + "/Packages/RDO")
@@ -216,7 +220,7 @@ def main(argv):
     print ("Downloading %d Packages For ISO, Please Wait...\n" % (len(plist)))
     # Updates means two versions of same package will be on ISO which causes Anaconda to Act Up
     p = subprocess.Popen(["yum","-y", "install", "--installroot="+ WORK_DIRECTORY, "--disablerepo=updates","--downloadonly",
-                              "--downloaddir=" + str(package_dir)] + plist[0:],stdout=FNULL)
+                              "--downloaddir=" + package_dir] + plist[0:],stdout=FNULL)
 
 
     # p = subprocess.Popen(["yumdownloader", "--installroot=" + WORK_DIRECTORY, "-x *.i686", "--resolve",
