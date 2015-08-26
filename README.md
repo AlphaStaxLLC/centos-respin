@@ -1,6 +1,6 @@
-# CentOS ISO Creator: Simple Python Script to create CentOS ISO with Custom Packages
+# CentOS-OpenStack Remix ISO Creator
 
-This script creates CentOS 7 ISO with [CentOS Cloud](http://buildlogs.centos.org/centos/7/cloud/openstack-kilo/) Packages.
+Simple Python Script To Create a CentOS 7 Remix ISO with [OpenStack-Kilo](http://buildlogs.centos.org/centos/7/cloud/openstack-kilo/) Packages. The ISO also has an [addon](https://github.com/asadpiz/org_centos_cloud) which allows users to specify the mode of installation of PackStack.
 
 ## Usage Instructions:
 1. [Download respin-centos.py](https://github.com/asadpiz/centos-respin/) and as root execute `./respin-centos.py`.
@@ -38,5 +38,8 @@ optional arguments:
                         CentOS-7-x86_64-RDO-1503.iso
 
 ```
+## Future Work:
+
+Modify this script to be a general CentOS Custom ISO Creator i.e., generating CentOS ISO with user provided package list/addons.
 IRC: asad_ (#centos-devel)
 
