@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Python Script to create a respin CentOS ISO with Custom Packages
+Python Script to create a respin CentOS ISO with Custom ASX Packages
 
 """
 
@@ -19,10 +19,10 @@ import xml.etree.ElementTree as ET
 import zipfile
 import stat
 
-OUTPUT_FILENAME = "CentOS-7-x86_64-Minimal-1503-01-RDO.iso"
+OUTPUT_FILENAME = "CentOS-7-x86_64-Everything-1503-01-ASX-RDO.iso"
 PACKAGES = ['yum-utils', 'genisoimage', 'createrepo', 'isomd5sum']
-PACKAGE_LIST = "https://github.com/asadpiz/org_centos_cloud/blob/master/PackageList.md"
-WORK_DIRECTORY = "/tmp/centos-respin"
+PACKAGE_LIST = "https://github.com/AlphaStaxLLC/org_centos_cloud/blob/master/PackageList.md"
+WORK_DIRECTORY = "/tmp/centos-asx-respin"
 
 
 def mount_iso(args, iso_mount):
@@ -36,7 +36,7 @@ def mount_iso(args, iso_mount):
     :return:
     """
     if not args.isofile:
-        print ("Downloading ISO Please Wait....\n")
+        print ("Downloading ASX ISO Please Wait....\n")
         split = urlparse.urlsplit(str(args.isolink))
         filename = split.path.split("/")[-1]
         urllib.urlretrieve(str(args.isolink), filename)
@@ -94,9 +94,9 @@ def edit_comps(file, plist):
     uservisible = ET.SubElement(group, 'uservisible')
     packagelist = ET.SubElement(group, 'packagelist')
 
-    id.text = "Cloud"
-    name.text = "CentOS Cloud"
-    description.text = "Packages from CentOS cloud Repo"
+    id.text = "ASX Cloud"
+    name.text = "CentOS ASX - Liberty Cloud"
+    description.text = "Packages from CentOS ASX - Liberty cloud Repo"
     default.text = "true"
     uservisible.text = "true"
 
@@ -106,33 +106,33 @@ def edit_comps(file, plist):
         packagereq.set("type", "mandatory")
 
     indent(group)
-    tree.write(WORK_DIRECTORY + "/DVD/comps.xml")
+    tree.write(WORK_DIRECTORY + "/DVD/asx-comps.xml")
 
 
 def main(argv):
     """
     Main Function:
     Download Required Packages.
-    Creates Directories: /mnt/respin-iso, <WORK_DIRECTORY>/DVD, <WORK_DIRECTORY>/Packages
+    Creates Directories: /mnt/asx-respin-iso, <WORK_DIRECTORY>/DVD, <WORK_DIRECTORY>/ASX-Packages
 
 
     :param argv:
     :return:
     """
     parser = argparse.ArgumentParser(
-        description="Creates a Respin of CentOS. By Default fetches CentOS 7 minimal ISO from the network and adds openstack packages from CentOS Cloud Repo to ISO")
+        description="Creates a Respin of CentOS. By Default fetches CentOS 7 minimal ISO from the network and adds openstack packages from CentOS ASX - Liberty Cloud Repo to ISO")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-f", "--isofile", help="ISO File", default=None)
     group.add_argument("-d", "--isodirectory", help="DVD Directory", default=None)
     group.add_argument("-l", "--isolink",
-                       help="ISO http Link [DEFAULT] = http://mirror.eu.oneandone.net/linux/distributions/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1503-01.iso",
-                       default="http://mirror.eu.oneandone.net/linux/distributions/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1503-01.iso", )
+                       help="ISO http Link [DEFAULT] = http://mirrors.kernel.org/centos/7/isos/x86_64/CentOS-7-x86_64-Everything-1503-01.iso",
+                       default="http://mirrors.kernel.org/centos/7/isos/x86_64/CentOS-7-x86_64-Everything-1503-01.iso", )
     parser.add_argument("-p", "--packagelist",
-                        help="Package List (only arch x86_64) to be Added to ISO, Make sure the packages you want to download have a corresponding repo in /etc/yum.repos.d/ [DEFAULT] = https://github.com/asadpiz/org_centos_cloud/blob/master/PackageList.md",
+                        help="Package List (only arch x86_64) to be Added to ISO, Make sure the packages you want to download have a corresponding repo in /etc/yum.repos.d/ [DEFAULT] = https://github.com/AlphaStaxLLC/org_centos_cloud/blob/master/PackageList.md",
                         default=PACKAGE_LIST)
     parser.add_argument("-o", "--output",
-                        help="Output Filename [DEFAULT] = CentOS-7-x86_64-RDO-1503.iso",
-                        default="CentOS-7-x86_64-RDO-1503.iso")
+                        help="Output Filename [DEFAULT] = CentOS-7-x86_64-ASX-RDO-1503.iso",
+                        default="CentOS-7-x86_64-ASX-RDO-1503.iso")
     args = parser.parse_args()
 
     FNULL = open(os.devnull, 'w')  # Disable output
@@ -141,9 +141,9 @@ def main(argv):
     p = subprocess.Popen(["yum", "-y", "install"] + PACKAGES[0:], stdout=FNULL)
     p.wait()
     # Create Directories
-    iso_mount = "/mnt/respin-iso"
+    iso_mount = "/mnt/asx-respin-iso"
     dvd_dir = WORK_DIRECTORY + "/DVD"
-    package_dir = WORK_DIRECTORY + "/Packages"
+    package_dir = WORK_DIRECTORY + "/ASX-Packages"
     if os.path.exists(dvd_dir):
         # Existing DVD Directory Found! Remove & Create New
         shutil.rmtree(dvd_dir)
@@ -163,34 +163,34 @@ def main(argv):
         raise Exception("No DVD Directory Found!")
 
     # Download Cloud Addon
-    if os.path.exists(dvd_dir + "/images/updates.img"):
-        os.remove(dvd_dir + "/images/updates.img")
-    urllib.urlretrieve("https://github.com/asadpiz/org_centos_cloud/releases/download/v0.1-alpha/updates.img",
-                       dvd_dir + "/images/updates.img")
-    # Fetch Contents of RDO file
-    if os.path.exists("RDO.zip"):
+    if os.path.exists(dvd_dir + "/images/asx-updates.img"):
+        os.remove(dvd_dir + "/images/asx-updates.img")
+    urllib.urlretrieve("https://github.com/AlphaStaxLLC/org_centos_cloud/releases/download/v0.1-alpha/asx-updates.img",
+                       dvd_dir + "/images/asx-updates.img")
+    # Fetch Contents of ASX-RDO file
+    if os.path.exists("ASX-RDO.zip"):
         pass
     else:
-        urllib.urlretrieve("https://github.com/asadpiz/centos-respin/blob/master/RDO.zip?raw=true", "RDO.zip")
-    if os.path.exists(dvd_dir + "/Packages/RDO"):
-        shutil.rmtree(dvd_dir + "/Packages/RDO")
-    os.makedirs(dvd_dir + "/Packages/RDO")
-    if os.path.exists("RDO.zip"):
-        z = zipfile.ZipFile("RDO.zip")
+        urllib.urlretrieve("https://github.com/AlphaStaxLLC/centos-respin/blob/master/ASX-RDO.zip?raw=true", "ASX-RDO.zip")
+    if os.path.exists(dvd_dir + "/ASX-Packages/ASX-RDO"):
+        shutil.rmtree(dvd_dir + "/ASX-Packages/ASX-RDO")
+    os.makedirs(dvd_dir + "/ASX-Packages/ASX-RDO")
+    if os.path.exists("ASX-RDO.zip"):
+        z = zipfile.ZipFile("ASX-RDO.zip")
         z.extract(r"mkiso.sh", WORK_DIRECTORY + "/")
         for name in z.namelist():
             if str(name) == "mkiso.sh":
                 pass
             else:
-                z.extract(name, dvd_dir + "/Packages/RDO")
+                z.extract(name, dvd_dir + "/Packages/ASX-RDO")
     else:
-        raise Exception ("Error Unable to Download Valid RDO.zip File\n")
-        # Create Cloud Repo with baseurl=http://buildlogs.centos.org/centos/7/cloud/openstack-kilo/
-    if os.path.exists("/etc/yum.repos.d/cloud.repo"):
-        os.remove("/etc/yum.repos.d/cloud.repo")
-    repo_file = open("/etc/yum.repos.d/cloud.repo", "w")
+        raise Exception ("Error Unable to Download Valid ASX-RDO.zip File\n")
+        # Create Cloud Repo with baseurl=http://buildlogs.centos.org/centos/7/cloud/openstack-liberty/
+    if os.path.exists("/etc/yum.repos.d/asx-cloud.repo"):
+        os.remove("/etc/yum.repos.d/asx-cloud.repo")
+    repo_file = open("/etc/yum.repos.d/asx-cloud.repo", "w")
     repo_file.write(
-        "[cloud]\nname=CentOS Cloud Packages - $basearch\nbaseurl=http://buildlogs.centos.org/centos/7/cloud/openstack-kilo/\nfailovermethod=priority\nenabled=1\ngpgcheck=0")
+        "[cloud]\nname=CentOS ASX - Liberty Cloud Packages - $basearch\nbaseurl=http://buildlogs.centos.org/centos/7/cloud/openstack-liberty/\nfailovermethod=priority\nenabled=1\ngpgcheck=0")
     repo_file.close()
     # Fetch PackageList
     plist = []
@@ -206,8 +206,8 @@ def main(argv):
         for line in fileinput.input(args.packagelist):
             plist.append(line.strip("\n"))
 
-    if os.path.exists(WORK_DIRECTORY + "/comps.xml"):
-        os.remove(WORK_DIRECTORY + "/comps.xml")
+    if os.path.exists(WORK_DIRECTORY + "/asx-comps.xml"):
+        os.remove(WORK_DIRECTORY + "/asx-comps.xml")
     for file in glob.glob(dvd_dir + "/repodata/*-comps.xml"):
         edit_comps(file, plist)
     shutil.rmtree(dvd_dir + "/repodata")
@@ -219,7 +219,7 @@ def main(argv):
     else:
         os.makedirs(package_dir)
 
-    print ("Downloading %d Packages For ISO, Please Wait...\n" % (len(plist)))
+    print ("Downloading %d Packages For ASX ISO, Please Wait...\n" % (len(plist)))
     # Updates means two versions of same package will be on ISO which causes Anaconda to Act Up
     p = subprocess.Popen(
         ["yum", "-y", "install", "--installroot=" + WORK_DIRECTORY, "--disablerepo=updates", "--releasever=7",
@@ -228,29 +228,29 @@ def main(argv):
 
     p.wait()
 
-    copy_tree(package_dir, dvd_dir + "/Packages")
-    print ("Done Downloading Packages\n")
+    copy_tree(package_dir, dvd_dir + "/ASX-Packages")
+    print ("Done Downloading ASX Packages\n")
 
     #  createrepo -g /DVD/comps.xml .
-    print ("Creating Custom Repo\n")
-    p = subprocess.Popen(["createrepo", "-g", "comps.xml", dvd_dir], cwd=dvd_dir, stdout=FNULL)
+    print ("Creating Custom ASX Repo\n")
+    p = subprocess.Popen(["createrepo", "-g", "asx-comps.xml", dvd_dir], cwd=dvd_dir, stdout=FNULL)
     p.wait()
-    print ("Creating ISO....")
+    print ("Creating ASX ISO....")
 
     # print label
     st = os.stat(WORK_DIRECTORY + "/mkiso.sh")
     os.chmod(WORK_DIRECTORY + "/mkiso.sh", st.st_mode | stat.S_IEXEC)
     subprocess.call(["./mkiso.sh", args.output], cwd=WORK_DIRECTORY, stdout=FNULL)
-    if args.output == "CentOS-7-x86_64-RDO-1503.iso":
-        print ("\n\nISO CREATION COMPLETE!!! FILE CAN BE FOUND AT: " + WORK_DIRECTORY + "/" + OUTPUT_FILENAME)
+    if args.output == "CentOS-7-x86_64-ASX-RDO-1503.iso":
+        print ("\n\nASX ISO CREATION COMPLETE!!! FILE CAN BE FOUND AT: " + WORK_DIRECTORY + "/" + OUTPUT_FILENAME)
     else:
         print (
-        "\n\nISO CREATION COMPLETE!!! FILE CAN BE FOUND AT: " + args.output + "\n DEFAULT PATH: " + WORK_DIRECTORY)
+        "\n\nASX ISO CREATION COMPLETE!!! FILE CAN BE FOUND AT: " + args.output + "\n DEFAULT PATH: " + WORK_DIRECTORY)
 
     # Cleanup Removes Downloaded ISO file, mounted directory (if -d not specified), DVD directory and downloaded Packages Directory
     file_names = os.listdir(os.curdir)
     for downloaded_iso in file_names:
-        if downloaded_iso == "CentOS-7-x86_64-Minimal-1503-01.iso":
+        if downloaded_iso == "CentOS-7-x86_64-Everything-1503-01.iso":
             os.remove(downloaded_iso)
     if not args.isodirectory:
         subprocess.call(["umount", "-f", iso_mount])
@@ -261,7 +261,7 @@ def main(argv):
     if os.path.exists(WORK_DIRECTORY + "/var"):
         shutil.rmtree(WORK_DIRECTORY + "/var")
     os.remove(WORK_DIRECTORY + "/mkiso.sh")
-    os.remove("/etc/yum.repos.d/cloud.repo")
+    os.remove("/etc/yum.repos.d/asx-cloud.repo")
     FNULL.close()
 
 
