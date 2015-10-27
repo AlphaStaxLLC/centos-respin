@@ -5,7 +5,7 @@ Simple Python Script To Create a CentOS 7 Remix ISO with [OpenStack-Liberty](htt
 ## Usage Instructions:
 1. [Download respin-centos.py](https://github.com/AlphaStaxLLC/centos-respin/) and as root execute `./asx-respin-centos.py`.
 
-This will download the CentOS minimal ISO from a mirror and then add CentOS Cloud Packages to this ISO. Optionally you can specify "-f [PATH-TO-ISO]" option to skip ISO download.
+This will download the CentOS everything ISO from a mirror and then add CentOS Cloud Packages to this ISO. Optionally you can specify "-f [PATH-TO-ISO]" option to skip ISO download.
 
 ## System Requirements:
 * Operating System: CentOS 7 x86_64 with Internet connectivity
