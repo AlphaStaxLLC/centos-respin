@@ -1,9 +1,9 @@
 # CentOS-OpenStack Remix ISO Creator
 
-Simple Python Script To Create a CentOS 7 Remix ISO with [OpenStack-Kilo](http://buildlogs.centos.org/centos/7/cloud/openstack-kilo/) Packages. The ISO also has an [addon](https://github.com/asadpiz/org_centos_cloud) which allows users to specify the mode of installation of PackStack.
+Simple Python Script To Create a CentOS 7 Remix ISO with [OpenStack-Liberty](http://buildlogs.centos.org/centos/7/cloud/openstack-liberty/) Packages. The ISO also has an [addon](https://github.com/AlphaStaxLLC/org_centos_cloud) which allows users to specify the mode of installation of PackStack.
 
 ## Usage Instructions:
-1. [Download respin-centos.py](https://github.com/asadpiz/centos-respin/) and as root execute `./respin-centos.py`.
+1. [Download respin-centos.py](https://github.com/AlphaStaxLLC/centos-respin/) and as root execute `./asx-respin-centos.py`.
 
 This will download the CentOS minimal ISO from a mirror and then add CentOS Cloud Packages to this ISO. Optionally you can specify "-f [PATH-TO-ISO]" option to skip ISO download.
 
@@ -15,7 +15,7 @@ This will download the CentOS minimal ISO from a mirror and then add CentOS Clou
 usage: respin-centos.py [-h] [-f ISOFILE | -d ISODIRECTORY | -l ISOLINK]
                         [-p PACKAGELIST]
 
-Creates a Respin of CentOS. By Default fetches CentOS 7 minimal ISO from the
+Creates a Respin of CentOS. By Default fetches CentOS 7 Everything ISO from the
 network and adds openstack packages from CentOS Cloud Repo to ISO
 
 optional arguments:
